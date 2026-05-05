@@ -82,7 +82,7 @@ class AddTask extends Component {
         this.state.inputValue = event.target.value;
     }
 
-    onAddTask(event) {
+    onAddTask() {
         const text = this.state.inputValue && this.state.inputValue.trim();
         if (text) {
             this.onAdd(text);
@@ -114,7 +114,7 @@ class Task extends Component {
         this.todo = todo;
         this.onToggleCallback = onToggle;
         this.onDeleteCallback = onDelete;
-        this.state = { };
+        this.state = { confirmDelete: false };
     }
 
     onToggle(event) {
@@ -122,15 +122,22 @@ class Task extends Component {
         this.onToggleCallback(this.todo.id, !!checked);
     }
 
-    onDelete(event) {
+    onDelete() {
+        if (!this.state.confirmDelete) {
+            this.state.confirmDelete = true;
+            this.update();
+            return;
+        }
         this.onDeleteCallback(this.todo.id);
     }
 
     render() {
+        const btnAttrs = this.state.confirmDelete ? { style: "background: red" } : {};
+        const btnText = "🗑️";
         return createElement("li", { 'data-id': this.todo.id }, [
             createElement("input", this.todo.completed ? { type: "checkbox", checked: "checked" } : { type: "checkbox" }, null, { change: "onToggle" }),
             createElement("label", this.todo.completed ? { style: "color: gray" } : {}, this.todo.text),
-            createElement("button", {}, "🗑", { click: "onDelete" })
+            createElement("button", btnAttrs, btnText, { click: "onDelete" })
         ]);
     }
 }
