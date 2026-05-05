@@ -45,6 +45,7 @@ class Component {
     attachEvents() {
         this._domNode.addEventListener("input", this.onEvent);
         this._domNode.addEventListener("click", this.onEvent);
+        this._domNode.addEventListener("change", this.onEvent);
     }
 
     update() {
@@ -56,10 +57,9 @@ class Component {
 
     onEvent(event) {
         const attrName = `data-${event.type}`;
-        // Поднимаемся от event.target вверх по дереву, чтобы найти элемент с нужным data-атрибутом.
         let el = event.target;
         while (el && el !== this._domNode) {
-            if (el.nodeType === 1) { // элемент
+            if (el.nodeType === 1) {
                 const handlerName = el.getAttribute(attrName);
                 if (handlerName && typeof this[handlerName] === 'function') {
                     this[handlerName](event);
@@ -101,14 +101,39 @@ class TodoList extends Component {
         }
     }
 
+      onToggleTodo(event) {
+        let el = event.target;
+        while (el && el.nodeType !== 1) el = el.parentNode;
+        if (!el) return;
+        const container = el.closest && el.closest('[data-id]') ? el.closest('[data-id]') : null;
+        const id = container ? Number(container.getAttribute('data-id')) : null;
+        if (id == null) return;
+        const todo = this.state.todos.find(t => t.id === id);
+        if (!todo) return;
+        const checked = event.target.checked !== undefined ? event.target.checked : !todo.completed;
+        todo.completed = !!checked;
+        this.update();
+      }
+
+      onDeleteTodo(event) {
+        let el = event.target;
+        while (el && el.nodeType !== 1) el = el.parentNode;
+        if (!el) return;
+        const container = el.closest && el.closest('[data-id]') ? el.closest('[data-id]') : null;
+        const id = container ? Number(container.getAttribute('data-id')) : null;
+        if (id == null) return;
+        this.state.todos = this.state.todos.filter(t => t.id !== id);
+        this.update();
+      }
+
     render() {
-        const todoItems = this.state.todos.map((todo) =>
-            createElement("li", {}, [
-                createElement("input", { type: "checkbox" }),
-                createElement("label", {}, todo.text),
-                createElement("button", {}, "🗑")
-            ])
-        );
+            const todoItems = this.state.todos.map((todo) =>
+              createElement("li", { 'data-id': todo.id }, [
+                createElement("input", todo.completed ? { type: "checkbox", checked: "checked" } : { type: "checkbox" }, null, { change: "onToggleTodo" }),
+                createElement("label", todo.completed ? { style: "color: gray" } : {}, todo.text),
+                createElement("button", {}, "🗑️", { click: "onDeleteTodo" })
+              ])
+            );
 
         return createElement("div", { class: "todo-list" }, [
             createElement("h1", {}, "TODO List"),
